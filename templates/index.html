@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome - Student Grievance Portal{% endblock %}
+
+{% block public_content %}
+<!-- Public Landing Page Navbar -->
+<nav class="landing-navbar">
+    <div class="logo-group">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>Grievance Portal</span>
+    </div>
+    <div class="navbar-nav">
+        <a href="{{ url_for('login') }}" class="btn btn-secondary">Log In</a>
+        <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started</a>
+    </div>
+</nav>
+
+<!-- Landing Content Wrapper -->
+<div class="landing-main">
+    {{ self.shared_landing_body() }}
+</div>
+
+<footer class="footer">
+    <p>&copy; 2026 Student Grievance Portal. All rights reserved. Designed in accordance with modern accessibility and usability principles.</p>
+</footer>
+{% endblock %}
+
+{% block content %}
+<!-- Logged In Landing Page Body -->
+<div class="page-header">
+    <div class="page-title-group">
+        <h1 class="page-title">Welcome to the Portal</h1>
+        <p class="page-subtitle">File, track, and resolve grievances directly</p>
+    </div>
+    <div>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Go to Dashboard <i class="fa-solid fa-arrow-right"></i></a>
+    </div>
+</div>
+
+<div class="card" style="padding: 40px; margin-bottom: 30px;">
+    {{ self.shared_landing_body() }}
+</div>
+{% endblock %}
+
+
+{% block shared_landing_body %}
+<!-- Hero Section -->
+<section class="hero-section" style="border: none; padding: 40px 0;">
+    <h1 class="hero-title">A modern platform to resolve <span>Student Grievances</span></h1>
+    <p class="hero-desc">We listen to your concerns. Submit grievances regarding academic issues, hostel amenities, library resources, fee problems, or other campus services and monitor updates in real-time.</p>
+    
+    <!-- Status Tracking Widget -->
+    <div class="search-box-container">
+        <i class="fa-solid fa-magnifying-glass" style="color: var(--text-hint); font-size: 16px;"></i>
+        <input type="text" id="trackIdInput" placeholder="Enter Grievance Reference ID to track status..." aria-label="Grievance ID Track input">
+        <button class="btn btn-primary" onclick="searchGrievanceTracker(event)">Track Complaint</button>
+    </div>
+    
+    <!-- Dynamic Track Result Placement -->
+    <div id="trackResultBox" style="display: none; max-width: 500px; margin: 16px auto 0;"></div>
+</section>
+
+<!-- Feature Cards Grid -->
+<section class="features-section">
+    <h2 class="section-title">Common Grievance Categories</h2>
+    <div class="card-grid">
+        <div class="card">
+            <div class="stat-icon primary" style="margin-bottom: 16px;">
+                <i class="fa-solid fa-book-open"></i>
+            </div>
+            <h3 style="font-size: 16px; margin-bottom: 8px;">Academic Queries</h3>
+            <p style="font-size: 13px; color: var(--text-secondary);">Grievances concerning examinations, grading, schedules, lectures, and departmental allocations.</p>
+        </div>
+        <div class="card">
+            <div class="stat-icon success" style="margin-bottom: 16px;">
+                <i class="fa-solid fa-hotel"></i>
+            </div>
+            <h3 style="font-size: 16px; margin-bottom: 8px;">Hostel & Amenities</h3>
+            <p style="font-size: 13px; color: var(--text-secondary);">Concerns regarding hostel rooms, cleanliness, mess food quality, water availability, and Wi-Fi services.</p>
+        </div>
+        <div class="card">
+            <div class="stat-icon warning" style="margin-bottom: 16px;">
+                <i class="fa-solid fa-credit-card"></i>
+            </div>
+            <h3 style="font-size: 16px; margin-bottom: 8px;">Finance & Fees</h3>
+            <p style="font-size: 13px; color: var(--text-secondary);">Queries related to fee structure, scholarship disbursements, fine allocations, and billing transparency.</p>
+        </div>
+        <div class="card">
+            <div class="stat-icon info" style="margin-bottom: 16px;">
+                <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+            <h3 style="font-size: 16px; margin-bottom: 8px;">General Discipline</h3>
+            <p style="font-size: 13px; color: var(--text-secondary);">Addressing concerns about harassment, ragging, safety issues, transport, or code of conduct violations.</p>
+        </div>
+    </div>
+    
+    <!-- Portal Stats Summary -->
+    <div class="stats-bar">
+        <div class="stat-bar-item">
+            <div class="stat-bar-num">{{ total_grievances }}</div>
+            <div class="stat-bar-lbl">Total Grievances Submitted</div>
+        </div>
+        <div class="stat-bar-item">
+            <div class="stat-bar-num">{{ resolved_grievances }}</div>
+            <div class="stat-bar-lbl">Successfully Resolved</div>
+        </div>
+        <div class="stat-bar-item">
+            <div class="stat-bar-num">{{ total_students }}</div>
+            <div class="stat-bar-lbl">Registered Students</div>
+        </div>
+    </div>
+</section>
+{% endblock %}

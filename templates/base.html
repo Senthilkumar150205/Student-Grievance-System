@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Student Grievance System{% endblock %}</title>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js (used in admin dashboard) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom Style Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Dark Mode Initializer Script to avoid theme flickering -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+</head>
+<body>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast toast-{{ category if category != 'error' else 'danger' }}">
+                        <i class="fa-solid {% if category == 'success' %}fa-circle-check{% elif category == 'danger' or category == 'error' %}fa-circle-exclamation{% elif category == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+                        <span>{{ message }}</span>
+                        <button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    {% if session.get('user_id') %}
+    <!-- Logged In Layout -->
+    <div class="app-container">
+        
+        <!-- Responsive Sidebar -->
+        <aside class="sidebar" id="appSidebar">
+            <div class="sidebar-brand">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>Grievance Portal</span>
+            </div>
+            
+            <div class="sidebar-user">
+                <img src="{{ url_for('static', filename='uploads/' + session.get('profile_photo', 'default.png')) }}" alt="Profile" class="user-avatar" id="sidebarAvatar">
+                <div class="user-details">
+                    <span class="user-name">{{ session.get('name') }}</span>
+                    <span class="user-role">
+                        {% if session.get('role') == 'admin' %}
+                            Admin
+                        {% elif session.get('role') == 'principal' %}
+                            Principal
+                        {% elif session.get('role') == 'department' %}
+                            Complaint Authority
+                        {% elif session.get('role') == 'warden' %}
+                            Hostel Warden
+                        {% else %}
+                            Student
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            
+            <ul class="sidebar-menu">
+                {% if session.get('role') == 'admin' %}
+                    <!-- Admin Navigation -->
+                    <li class="sidebar-item {% if request.path == url_for('admin_dashboard') %}active{% endif %}">
+                        <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link">
+                            <i class="fa-solid fa-chart-line"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item {% if request.path == url_for('admin_grievances') %}active{% endif %}">
+                        <a href="{{ url_for('admin_grievances') }}" class="sidebar-link">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span>Manage Grievances</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item {% if request.path == url_for('manage_users') %}active{% endif %}">
+                        <a href="{{ url_for('manage_users') }}" class="sidebar-link">
+                            <i class="fa-solid fa-users"></i>
+                            <span>Manage Users</span>
+                        </a>
+                    </li>
+                {% elif session.get('role') == 'principal' %}
+                    <!-- Principal Navigation -->
+                    <li class="sidebar-item {% if request.path == url_for('principal_dashboard') %}active{% endif %}">
+                        <a href="{{ url_for('principal_dashboard') }}" class="sidebar-link">
+                            <i class="fa-solid fa-chart-pie"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item {% if request.path == url_for('admin_grievances') %}active{% endif %}">
+                        <a href="{{ url_for('admin_grievances') }}" class="sidebar-link">
+                            <i class="fa-solid fa-list-check"></i>
+                            <span>Monitor Grievances</span>
+                        </a>
+                    </li>
+                {% elif session.get('role') in ['department', 'warden'] %}
+                    <!-- Authority/Warden Navigation -->
+                    <li class="sidebar-item {% if request.path == url_for('dashboard') %}active{% endif %}">
+                        <a href="{{ url_for('dashboard') }}" class="sidebar-link">
+                            <i class="fa-solid fa-house"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                {% else %}
+                    <!-- Student Navigation -->
+                    <li class="sidebar-item {% if request.path == url_for('dashboard') %}active{% endif %}">
+                        <a href="{{ url_for('dashboard') }}" class="sidebar-link">
+                            <i class="fa-solid fa-house"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item {% if request.path == url_for('submit_grievance') %}active{% endif %}">
+                        <a href="{{ url_for('submit_grievance') }}" class="sidebar-link">
+                            <i class="fa-solid fa-circle-plus"></i>
+                            <span>New Grievance</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-item {% if request.path == url_for('my_grievances') %}active{% endif %}">
+                        <a href="{{ url_for('my_grievances') }}" class="sidebar-link">
+                            <i class="fa-solid fa-receipt"></i>
+                            <span>My Grievances</span>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                <li class="sidebar-item {% if request.path == url_for('profile') %}active{% endif %}">
+                    <a href="{{ url_for('profile') }}" class="sidebar-link">
+                        <i class="fa-solid fa-user-gear"></i>
+                        <span>My Profile</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <a href="{{ url_for('logout') }}" class="btn btn-secondary w-full" style="width: 100%;">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span>Log Out</span>
+                </a>
+            </div>
+        </aside>
+        
+        <!-- Main Content Shell -->
+        <div class="main-wrapper">
+            
+            <!-- App Top Bar Header -->
+            <header class="app-header">
+                <div class="header-left">
+                    <button class="menu-toggle" id="menuToggle" aria-label="Toggle Menu">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h3 style="font-weight: 600; font-size: 18px;">
+                        {% block header_title %}Student Grievance System{% endblock %}
+                    </h3>
+                </div>
+                
+                <div class="header-right">
+                    <!-- Light/Dark Mode Switch -->
+                    <button class="icon-btn" id="themeToggleBtn" title="Toggle Theme">
+                        <i class="fa-solid fa-moon" id="themeIcon"></i>
+                    </button>
+                    
+                    <!-- Notification Bell Dropdown -->
+                    <div class="notification-dropdown">
+                        <button class="icon-btn" id="notificationBtn" title="Notifications">
+                            <i class="fa-solid fa-bell"></i>
+                            {% if unread_count > 0 %}
+                                <span class="badge" id="notificationBadge">{{ unread_count }}</span>
+                            {% endif %}
+                        </button>
+                        
+                        <div class="dropdown-menu-list" id="notificationDropdown">
+                            <div class="dropdown-header">
+                                <span>Notifications</span>
+                                {% if unread_count > 0 %}
+                                    <span class="pill pill-high" style="font-size: 10px;">{{ unread_count }} New</span>
+                                {% endif %}
+                            </div>
+                            <div class="dropdown-body" id="notificationList">
+                                {% if unread_notifications %}
+                                    {% for notif in unread_notifications %}
+                                        <div class="notification-item unread" onclick="markAsRead('{{ notif.id }}', this)">
+                                            <span class="notif-text">{{ notif.message }}</span>
+                                            <span class="notif-time">{{ notif.created_at | datetimeformat }}</span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <div class="dropdown-empty">
+                                        <i class="fa-regular fa-bell-slash" style="font-size: 24px; color: var(--text-hint); margin-bottom: 8px; display: block;"></i>
+                                        <span>No new notifications</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Page Area -->
+            <main class="page-container">
+                {% block content %}{% endblock %}
+            </main>
+            
+        </div>
+    </div>
+    {% else %}
+    <!-- Public / Authentication Layout (Landing Page, Login, Register, Forgot Password) -->
+    {% block public_content %}{% endblock %}
+    {% endif %}
+
+    <!-- Custom Script Utilities -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

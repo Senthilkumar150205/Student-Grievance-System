@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account - Student Grievance Portal{% endblock %}
+
+{% block public_content %}
+<div class="auth-wrapper" style="padding: 40px 24px;">
+    <div class="auth-card" style="max-width: 500px;">
+        <div class="auth-header">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <h2>Create Account</h2>
+            <p style="font-size: 13px; color: var(--text-secondary);">Join the Student Grievance Portal</p>
+        </div>
+        
+        <form action="{{ url_for('register') }}" method="post" id="registerForm" autocomplete="off">
+            <div class="form-group">
+                <label for="regName" class="form-label">Full Name</label>
+                <input type="text" name="name" id="regName" class="form-control" placeholder="John Doe" required autocomplete="off">
+            </div>
+            
+            <div class="form-group">
+                <label for="regEmail" class="form-label">Email Address</label>
+                <input type="email" name="email" id="regEmail" class="form-control" placeholder="john.doe@university.edu" required autocomplete="off">
+            </div>
+            
+            <div class="form-group" id="deptGroup">
+                <label for="regDept" class="form-label">Academic Department</label>
+                <select name="department" id="regDept" class="form-control" required autocomplete="off">
+                    <option value="" disabled selected>Select your department...</option>
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="Electrical Engineering">Electrical Engineering</option>
+                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                    <option value="Civil Engineering">Civil Engineering</option>
+                    <option value="Business Administration">Business Administration</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="regPassword" class="form-label">Create Password</label>
+                <div class="password-wrapper">
+                    <input type="password" name="password" id="regPassword" class="form-control" placeholder="Min. 6 characters" required minlength="6" oninput="checkPasswordStrength()" autocomplete="new-password">
+                    <i class="fa-solid fa-eye password-toggle-icon" data-input-id="regPassword"></i>
+                </div>
+                <div class="password-strength" id="pwdStrength">Password Strength: <span>Weak</span></div>
+                <div id="strengthMeter" style="height: 4px; border-radius: 2px; background-color: var(--border-color); margin-top: 6px; transition: var(--transition);"></div>
+                <small id="strengthText" style="font-size: 11px; color: var(--text-hint); display: block; margin-top: 2px; text-align: right;"></small>
+            </div>
+            
+            <div class="form-group">
+                <label for="regConfirmPassword" class="form-label">Confirm Password</label>
+                <div class="password-wrapper">
+                    <input type="password" name="confirm_password" id="regConfirmPassword" class="form-control" placeholder="Repeat your password" required minlength="6" oninput="checkPasswordMatch()" autocomplete="new-password">
+                    <i class="fa-solid fa-eye password-toggle-icon" data-input-id="regConfirmPassword"></i>
+                </div>
+                <div class="password-match" id="pwdMatch"></div>
+                <small id="matchText" style="font-size: 11px; display: block; margin-top: 2px; text-align: right;"></small>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 16px; padding: 12px;">Create Account</button>
+        </form>
+        
+        <div class="auth-footer">
+            <span>Already have an account?</span>
+            <a href="{{ url_for('login') }}" style="font-weight: 600;">Sign In</a>
+            <div style="margin-top: 12px;">
+                <a href="{{ url_for('index') }}" style="font-size: 12px; color: var(--text-hint);"><i class="fa-solid fa-house"></i> Back to Homepage</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Interactive password strength meter
+    function checkPasswordStrength() {
+        const pwd = document.getElementById('regPassword').value;
+        const meter = document.getElementById('strengthMeter');
+        const text = document.getElementById('strengthText');
+        
+        if (!pwd) {
+            meter.style.backgroundColor = 'var(--border-color)';
+            meter.style.width = '0';
+            text.textContent = '';
+            return;
+        }
+        
+        let score = 0;
+        if (pwd.length >= 6) score++;
+        if (pwd.length >= 10) score++;
+        if (/[A-Z]/.test(pwd)) score++;
+        if (/[0-9]/.test(pwd)) score++;
+        if (/[^A-Za-z0-9]/.test(pwd)) score++;
+        
+        let width = '20%';
+        let color = 'var(--danger)';
+        let strength = 'Weak';
+        
+        if (score === 2) {
+            width = '40%';
+            color = '#ff9900';
+            strength = 'Fair';
+        } else if (score === 3) {
+            width = '60%';
+            color = '#ffcc00';
+            strength = 'Good';
+        } else if (score === 4) {
+            width = '80%';
+            color = 'var(--info)';
+            strength = 'Strong';
+        } else if (score === 5) {
+            width = '100%';
+            color = 'var(--success)';
+            strength = 'Excellent';
+        }
+        
+        meter.style.width = width;
+        meter.style.backgroundColor = color;
+        text.textContent = `Strength: ${strength}`;
+        text.style.color = color;
+    }
+
+    // Matching validation helper
+    function checkPasswordMatch() {
+        const pwd = document.getElementById('regPassword').value;
+        const confirmPwd = document.getElementById('regConfirmPassword').value;
+        const text = document.getElementById('matchText');
+        
+        if (!confirmPwd) {
+            text.textContent = '';
+            return;
+        }
+        
+        if (pwd === confirmPwd) {
+            text.textContent = 'Passwords match';
+            text.style.color = 'var(--success)';
+        } else {
+            text.textContent = 'Passwords do not match';
+            text.style.color = 'var(--danger)';
+        }
+    }
+</script>
+{% endblock %}

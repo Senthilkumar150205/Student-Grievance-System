@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Grievance - Student Grievance Portal{% endblock %}
+
+{% block header_title %}File a New Grievance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-group">
+        <h1 class="page-title">Grievance Submission Form</h1>
+        <p class="page-subtitle">Provide details regarding your issue. Respective authorities will review and respond shortly.</p>
+    </div>
+</div>
+
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <form action="{{ url_for('submit_grievance') }}" method="post" enctype="multipart/form-data" id="grievanceForm">
+        
+        <!-- Title -->
+        <div class="form-group">
+            <label for="gTitle" class="form-label">Subject / Title <span style="color: var(--danger);">*</span></label>
+            <input type="text" name="title" id="gTitle" class="form-control" placeholder="Brief summary of your concern..." required maxlength="150">
+        </div>
+        
+        <!-- Category and Priority -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 20px;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="gCategory" class="form-label">Grievance Type <span style="color: var(--danger);">*</span></label>
+                <select name="category" id="gCategory" class="form-control" required onchange="toggleDepartmentSelect()">
+                    <option value="" disabled selected>Select a type...</option>
+                    <option value="Department">Department Complaint</option>
+                    <option value="Hostel">Hostel Complaint</option>
+                </select>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Priority Level <span style="color: var(--danger);">*</span></label>
+                <div style="display: flex; gap: 16px; align-items: center; height: 42px;">
+                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px;">
+                        <input type="radio" name="priority" value="low" style="accent-color: var(--primary);"> Low
+                    </label>
+                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px;">
+                        <input type="radio" name="priority" value="medium" checked style="accent-color: var(--warning);"> Medium
+                    </label>
+                    <label style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 14px;">
+                        <input type="radio" name="priority" value="high" style="accent-color: var(--danger);"> High
+                    </label>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Target Department (shown conditionally) -->
+        <div class="form-group" id="deptSelectGroup" style="display: none; margin-bottom: 20px;">
+            <label for="gTargetDepartment" class="form-label">Target Department <span style="color: var(--danger);">*</span></label>
+            <select name="target_department" id="gTargetDepartment" class="form-control">
+                <option value="" disabled selected>Select department...</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="Electrical Engineering">Electrical Engineering</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Civil Engineering">Civil Engineering</option>
+                <option value="Business Administration">Business Administration</option>
+            </select>
+        </div>
+        
+        <!-- Description -->
+        <div class="form-group">
+            <label for="gDesc" class="form-label">Detailed Description <span style="color: var(--danger);">*</span></label>
+            <textarea name="description" id="gDesc" class="form-control" placeholder="Please describe your complaint in detail. Include dates, names, or locations if applicable..." required data-max-chars="1000" style="min-height: 120px;"></textarea>
+        </div>
+        
+        <!-- File Upload -->
+        <div class="form-group">
+            <label class="form-label">Supporting Document / Image (Optional)</label>
+            <div class="upload-zone" onclick="triggerFileInput('gAttachment')" id="uploadZone" style="padding: 24px; border: 2px dashed var(--border-color); border-radius: 8px; text-align: center; cursor: pointer; background: var(--bg-app); transition: var(--transition);">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 28px; color: var(--primary); margin-bottom: 8px;"></i>
+                <p style="font-weight: 500; font-size: 14px; color: var(--text-primary);">Click or drag file here to upload</p>
+                <p style="font-size: 11px; color: var(--text-hint); margin-top: 4px;">Supported Formats: PNG, JPG, PDF, DOC (Max: 16MB)</p>
+                <input type="file" name="attachment" id="gAttachment" style="display: none;" data-preview-id="attachmentPreview">
+            </div>
+            
+            <!-- Upload Preview Area -->
+            <div class="upload-preview" id="previewContainer" style="display: none; align-items: center; gap: 12px; margin-top: 12px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px;">
+                <i class="fa-solid fa-paperclip" style="color: var(--primary); font-size: 16px;"></i>
+                <span id="attachmentPreview_name" style="font-weight: 500; font-size: 13px; flex-grow: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                <img id="attachmentPreview" src="" alt="preview" style="display:none; max-width:60px; max-height:60px; border-radius:6px; object-fit:cover;">
+                <button type="button" class="btn btn-text" style="color: var(--danger); font-size: 12px; padding: 0; min-width: auto;" onclick="clearAttachment()">Remove</button>
+            </div>
+        </div>
+        
+        <!-- Anonymous check -->
+        <div class="form-group" style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 16px;">
+            <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text-primary);">
+                <input type="checkbox" name="is_anonymous" value="1" style="accent-color: var(--primary); width: 16px; height: 16px; margin: 0;">
+                <strong>Submit Anonymously</strong>
+            </label>
+            <span style="display: block; font-size: 12px; color: var(--text-hint); margin-top: 4px; margin-left: 24px;">
+                Your name, email, department, and profile photo will be hidden from authorities and wardens.
+            </span>
+        </div>
+        
+        <!-- Targets Staff check -->
+        <div class="form-group" style="margin-top: 16px;">
+            <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px; color: var(--text-primary);">
+                <input type="checkbox" name="targets_staff" value="1" style="accent-color: var(--primary); width: 16px; height: 16px; margin: 0;">
+                <strong>Report direct concern against a staff member or warden</strong>
+            </label>
+            <span style="display: block; font-size: 12px; color: var(--text-hint); margin-top: 4px; margin-left: 24px;">
+                Select this if your complaint concerns a college staff member or warden. This escalates the case to the Complaint Authority for direct handling in coordination with the Principal's office.
+            </span>
+        </div>
+        
+        <!-- Submit Buttons -->
+        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-primary">Submit Grievance</button>
+        </div>
+        
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Toggle Department selection based on Category Type
+    function toggleDepartmentSelect() {
+        const category = document.getElementById('gCategory').value;
+        const deptGroup = document.getElementById('deptSelectGroup');
+        const deptInput = document.getElementById('gTargetDepartment');
+        
+        if (category === 'Department') {
+            deptGroup.style.display = 'block';
+            deptInput.required = true;
+        } else {
+            deptGroup.style.display = 'none';
+            deptInput.required = false;
+            deptInput.value = '';
+        }
+    }
+
+    // Attachment Drag and Drop support
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('gAttachment');
+    const previewContainer = document.getElementById('previewContainer');
+    
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.style.borderColor = 'var(--primary)';
+        uploadZone.style.backgroundColor = 'var(--primary-light)';
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.style.borderColor = 'var(--border-color)';
+        uploadZone.style.backgroundColor = 'var(--bg-app)';
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.style.borderColor = 'var(--border-color)';
+        uploadZone.style.backgroundColor = 'var(--bg-app)';
+        
+        if (e.dataTransfer.files.length > 0) {
+            fileInput.files = e.dataTransfer.files;
+            handleFileChange();
+        }
+    });
+    
+    function triggerFileInput(id) {
+        document.getElementById(id).click();
+    }
+    
+    fileInput.addEventListener('change', handleFileChange);
+    
+    function handleFileChange() {
+        const file = fileInput.files[0];
+        if (file) {
+            // File size validation (16MB)
+            if (file.size > 16 * 1024 * 1024) {
+                showToast('File is too large. Maximum size is 16MB.', 'danger');
+                clearAttachment();
+                return;
+            }
+            
+            previewContainer.style.display = 'flex';
+            document.getElementById('attachmentPreview_name').textContent = file.name;
+            
+            // Show preview if it is an image
+            const imgPreview = document.getElementById('attachmentPreview');
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imgPreview.src = e.target.result;
+                    imgPreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                imgPreview.style.display = 'none';
+            }
+        }
+    }
+    
+    function clearAttachment() {
+        fileInput.value = '';
+        previewContainer.style.display = 'none';
+        document.getElementById('attachmentPreview_name').textContent = '';
+        document.getElementById('attachmentPreview').src = '';
+    }
+</script>
+{% endblock %}

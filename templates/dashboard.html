@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Student Grievance Portal{% endblock %}
+
+{% block header_title %}
+    {% if session.get('role') == 'department' %}
+        Complaint Authority Dashboard
+    {% elif session.get('role') == 'warden' %}
+        Hostel Warden Dashboard
+    {% else %}
+        Student Dashboard
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div class="page-title-group">
+        <h1 class="page-title">
+            {% if session.get('role') == 'student' %}
+                Welcome, Student!
+            {% elif session.get('role') == 'department' %}
+                Welcome, Complaint Authority!
+            {% elif session.get('role') == 'warden' %}
+                Welcome, Hostel Warden!
+            {% else %}
+                Welcome, User!
+            {% endif %}
+        </h1>
+        <p class="page-subtitle">
+            {% if session.get('role') == 'department' %}
+                Review and resolve academic and department-related grievances.
+            {% elif session.get('role') == 'warden' %}
+                Review and resolve grievances regarding hostel blocks, rooms, and facilities.
+            {% else %}
+                Track status and raise queries regarding campus affairs.
+            {% endif %}
+        </p>
+    </div>
+
+    {% if session.get('role') == 'student' %}
+    <div>
+        <a href="{{ url_for('submit_grievance') }}" class="btn btn-primary">
+            <i class="fa-solid fa-plus"></i> File a Grievance
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Statistics Cards -->
+<div class="card-grid">
+
+    <div class="card stat-card" style="border-left: 4px solid var(--primary);">
+        <div class="stat-icon primary">
+            <i class="fa-solid fa-receipt"></i>
+        </div>
+        <div class="stat-details">
+            <span class="stat-number">{{ total or 0 }}</span>
+            <span class="stat-label">
+                {% if session.get('role') in ['department', 'warden'] %}
+                    Total Routed
+                {% else %}
+                    Total Grievances
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <div class="card stat-card" style="border-left: 4px solid var(--warning);">
+        <div class="stat-icon warning">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+        </div>
+        <div class="stat-details">
+            <span class="stat-number">{{ pending or 0 }}</span>
+            <span class="stat-label">Pending Review</span>
+        </div>
+    </div>
+
+    <div class="card stat-card" style="border-left: 4px solid var(--info);">
+        <div class="stat-icon info">
+            <i class="fa-solid fa-spinner fa-spin-pulse"></i>
+        </div>
+        <div class="stat-details">
+            <span class="stat-number">{{ inprogress or 0 }}</span>
+            <span class="stat-label">In Progress</span>
+        </div>
+    </div>
+
+    <div class="card stat-card" style="border-left: 4px solid var(--success);">
+        <div class="stat-icon success">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="stat-details">
+            <span class="stat-number">{{ resolved or 0 }}</span>
+            <span class="stat-label">Resolved Concerns</span>
+        </div>
+    </div>
+
+</div>
+
+<div class="details-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start;">
+
+    <div class="card" style="display:flex;flex-direction:column;gap:16px;">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h3>
+                {% if session.get('role') in ['department', 'warden'] %}
+                    Recent Routed Complaints
+                {% else %}
+                    My Recent Grievances
+                {% endif %}
+            </h3>
+
+            {% if session.get('role') == 'student' %}
+            <a href="{{ url_for('my_grievances') }}" class="btn btn-text">
+                View All
+            </a>
+            {% endif %}
+        </div>
+
+        {% if recent_grievances and recent_grievances|length > 0 %}
+
+        <div class="table-responsive">
+            <table class="custom-table">
+
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Subject</th>
+                        {% if session.get('role') in ['department', 'warden'] %}
+                        <th>Student</th>
+                        {% endif %}
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for g in recent_grievances %}
+
+                    <tr>
+
+                        <td>#{{ g.id }}</td>
+
+                        <td>{{ g.title }}</td>
+
+                        {% if session.get('role') in ['department', 'warden'] %}
+                        <td>
+                            {{ g.student_name }}
+                            {% if g.is_anonymous %}
+                                <span style="font-size: 11px; font-style: italic; color: var(--text-hint); display: block;">(Anonymous)</span>
+                            {% endif %}
+                        </td>
+                        {% endif %}
+
+                        <td>
+
+                            {% if g.status=="pending" %}
+                            <span class="pill pill-pending">
+                                Pending
+                            </span>
+
+                            {% elif g.status=="in-progress" %}
+                                {% if g.warden_resolved and session.get('role') != 'student' %}
+                                <span class="pill pill-warning" style="font-size: 11px; padding: 4px 8px; background-color: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.3);">
+                                    Warden Resolved (Pending Review)
+                                </span>
+                                {% else %}
+                                <span class="pill pill-in-progress">
+                                    In Progress
+                                </span>
+                                {% endif %}
+
+                            {% elif g.status=="resolved" %}
+
+                            <span class="pill pill-resolved">
+                                Resolved
+                            </span>
+
+                            {% else %}
+
+                            <span class="pill">
+                                {{ g.status }}
+                            </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            <a href="{{ url_for('grievance_details', id=g.id) }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">
+                                View
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div style="text-align:center;padding:40px;">
+
+            <i class="fa-regular fa-folder-open" style="font-size:35px; color: var(--text-hint); margin-bottom: 8px;"></i>
+
+            <p>No grievances found.</p>
+            
+            {% if session.get('role') == 'student' %}
+            <a href="{{ url_for('submit_grievance') }}" class="btn btn-primary" style="margin-top: 12px;">
+                File Complaint
+            </a>
+            {% endif %}
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+    <!-- Activities & Notifications -->
+    <div class="card" style="display:flex;flex-direction:column;gap:16px;">
+
+        <h3>Recent Updates & Alerts</h3>
+
+        {% if activities and activities|length > 0 %}
+
+        <div class="activity-list" style="display: flex; flex-direction: column; gap: 12px;">
+
+            {% for act in activities %}
+
+            <div class="activity-item {% if not act.is_read %}unread{% endif %}" style="padding: 10px 12px; background: var(--bg-app); border-radius: 8px; border-left: 3px solid var(--primary);">
+
+                <div class="activity-content">
+
+                    <p class="activity-message" style="font-size: 13px; color: var(--text-primary); margin-bottom: 4px;">
+
+                        {{ act.message }}
+
+                    </p>
+
+                    <p class="activity-time" style="font-size: 11px; color: var(--text-hint);">
+
+                        {% if act.created_at %}
+                        {{ act.created_at | datetimeformat('%d-%m-%Y %I:%M %p') }}
+                        {% else %}
+                        Date unavailable
+                        {% endif %}
+
+                    </p>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+        {% else %}
+
+        <div style="text-align:center;padding:40px;">
+
+            <i class="fa-regular fa-bell-slash" style="font-size:35px; color: var(--text-hint);"></i>
+
+            <p style="margin-top: 8px;">No recent alerts.</p>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}
