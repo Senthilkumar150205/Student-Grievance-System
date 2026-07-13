@@ -1047,8 +1047,8 @@ def submit_grievance():
                 flash('File type not allowed. Supported formats: PNG, JPG, JPEG, GIF, PDF, DOC, DOCX.', 'danger')
                 return render_template('submit_grievance.html')
                 
-        is_anonymous = 1 if request.form.get('is_anonymous') == '1' else 0
-        targets_staff = 1 if request.form.get('targets_staff') == '1' else 0
+        is_anonymous = True if request.form.get('is_anonymous') == '1' else False
+        targets_staff = True if request.form.get('targets_staff') == '1' else False
 
         # Automatic Routing Assignment
         assigned_to = None
@@ -1539,7 +1539,7 @@ def admin_grievances():
         params.append(priority_filter)
         
     if search_query:
-        query += " AND (g.title LIKE %s OR g.description LIKE %s OR (g.is_anonymous = 0 AND (u.name LIKE %s OR u.email LIKE %s)))"
+        query += " AND (g.title LIKE %s OR g.description LIKE %s OR (g.is_anonymous = FALSE AND (u.name LIKE %s OR u.email LIKE %s)))"
         like_expr = f"%{search_query}%"
         params.extend([like_expr, like_expr, like_expr, like_expr])
         
@@ -1740,7 +1740,7 @@ def admin_add_user():
     password = request.form.get('password', '')
     role = request.form.get('role', 'student').strip()
     department = request.form.get('department', '').strip()
-    is_active = 1 if request.form.get('is_active') == '1' else 0
+    is_active = True if request.form.get('is_active') == '1' else False
     
     if not name or not email or not password or not role:
         flash('Name, Email, Password and Role are required.', 'danger')
@@ -1785,7 +1785,7 @@ def admin_edit_user(user_id):
     email = request.form.get('email', '').strip().lower()
     role = request.form.get('role', '').strip()
     department = request.form.get('department', '').strip()
-    is_active = 1 if request.form.get('is_active') == '1' else 0
+    is_active = True if request.form.get('is_active') == '1' else False
     
     if not name or not email or not role:
         flash('Name, Email and Role are required.', 'danger')
@@ -1795,7 +1795,7 @@ def admin_edit_user(user_id):
     cursor = conn.cursor(dictionary=True)
     
     # Prevent editing own role/status to avoid locking out
-    if email == session['email'] and (role != 'admin' or is_active != 1):
+    if email == session['email'] and (role != 'admin' or not is_active):
         flash('You cannot change your own admin role or de-activate yourself.', 'danger')
         cursor.close()
         conn.close()
@@ -1891,7 +1891,7 @@ def admin_toggle_status(user_id):
         conn.close()
         return jsonify({'success': False, 'message': 'You cannot deactivate your own account.'})
         
-    new_status = 0 if user['is_active'] else 1
+    new_status = False if user['is_active'] else True
     cursor.execute("UPDATE users SET is_active = %s WHERE id = %s", (new_status, user_id))
     conn.commit()
     cursor.close()
