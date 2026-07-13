@@ -689,6 +689,31 @@ textarea.form-control {
     min-height: 120px;
 }
 
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-wrapper .form-control {
+    padding-right: 40px;
+}
+
+.password-toggle-icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--text-hint);
+    font-size: 14px;
+    z-index: 2;
+    transition: var(--transition);
+}
+
+.password-toggle-icon:hover {
+    color: var(--text-secondary);
+}
+
 /* Badges and Priority Indicators */
 .pill {
     display: inline-flex;
