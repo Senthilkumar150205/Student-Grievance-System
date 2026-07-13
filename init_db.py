@@ -1,46 +1,55 @@
-import pymysql
 import os
+import psycopg2
 from werkzeug.security import generate_password_hash
 from config import Config
 
 def init_database():
     try:
-        # Connect to MySQL Server using PyMySQL (pure Python, 3.14 compatible)
-        conn = pymysql.connect(
-            host=Config.DB_HOST,
-            user=Config.DB_USER,
-            password=Config.DB_PASSWORD,
-            port=Config.DB_PORT
-        )
+        print("Connecting to PostgreSQL database...")
+        # Connect to PostgreSQL / Supabase
+        if Config.DATABASE_URL:
+            conn = psycopg2.connect(Config.DATABASE_URL)
+        else:
+            conn = psycopg2.connect(
+                host=Config.DB_HOST,
+                user=Config.DB_USER,
+                password=Config.DB_PASSWORD,
+                dbname=Config.DB_NAME,
+                port=Config.DB_PORT
+            )
         cursor = conn.cursor()
         
-        # Create database (Force rebuild to apply schema migrations)
-        cursor.execute(f"DROP DATABASE IF EXISTS {Config.DB_NAME}")
-        cursor.execute(f"CREATE DATABASE {Config.DB_NAME}")
-        cursor.execute(f"USE {Config.DB_NAME}")
+        print("Dropping existing tables if they exist to rebuild schema...")
+        # Drop tables in reverse order of foreign keys
+        cursor.execute("DROP TABLE IF EXISTS password_resets CASCADE;")
+        cursor.execute("DROP TABLE IF EXISTS notifications CASCADE;")
+        cursor.execute("DROP TABLE IF EXISTS grievance_replies CASCADE;")
+        cursor.execute("DROP TABLE IF EXISTS grievances CASCADE;")
+        cursor.execute("DROP TABLE IF EXISTS users CASCADE;")
+        conn.commit()
         
         # Create tables
         print("Creating tables...")
         
-        # Users
+        # Users Table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 name VARCHAR(100) NOT NULL,
                 email VARCHAR(100) NOT NULL UNIQUE,
                 password VARCHAR(255) NOT NULL,
-                role ENUM('student', 'staff', 'department', 'warden', 'principal', 'admin') DEFAULT 'student',
+                role VARCHAR(50) DEFAULT 'student',
                 department VARCHAR(100) DEFAULT NULL,
                 profile_photo VARCHAR(255) DEFAULT 'default.png',
                 is_active BOOLEAN DEFAULT TRUE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            );
         """)
         
-        # Grievances
+        # Grievances Table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS grievances (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 user_id INT NOT NULL,
                 assigned_to INT DEFAULT NULL,
                 staff_id INT DEFAULT NULL,
@@ -53,55 +62,55 @@ def init_database():
                 warden_resolved BOOLEAN DEFAULT FALSE,
                 authority_approved BOOLEAN DEFAULT FALSE,
                 title VARCHAR(150) NOT NULL,
-                category ENUM('Department', 'Hostel') NOT NULL,
+                category VARCHAR(50) NOT NULL,
                 target_department VARCHAR(100) DEFAULT NULL,
                 description TEXT NOT NULL,
                 attachment VARCHAR(255) DEFAULT NULL,
-                status ENUM('pending', 'staff_review', 'authority_review', 'in_progress', 'in-progress', 'resolved') DEFAULT 'pending',
-                priority ENUM('low', 'medium', 'high') DEFAULT 'medium',
+                status VARCHAR(50) DEFAULT 'pending',
+                priority VARCHAR(50) DEFAULT 'medium',
                 remarks TEXT DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (assigned_to) REFERENCES users(id) ON DELETE SET NULL,
                 FOREIGN KEY (staff_id) REFERENCES users(id) ON DELETE SET NULL,
                 FOREIGN KEY (warden_id) REFERENCES users(id) ON DELETE SET NULL
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            );
         """)
         
-        # Replies
+        # Grievance Replies Table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS grievance_replies (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 grievance_id INT NOT NULL,
                 sender_id INT NOT NULL,
                 message TEXT NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (grievance_id) REFERENCES grievances(id) ON DELETE CASCADE,
                 FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            );
         """)
         
-        # Notifications
+        # Notifications Table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS notifications (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 user_id INT NOT NULL,
                 message TEXT NOT NULL,
                 is_read BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            );
         """)
         
-        # Password Resets
+        # Password Resets Table
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS password_resets (
-                id INT AUTO_INCREMENT PRIMARY KEY,
+                id SERIAL PRIMARY KEY,
                 email VARCHAR(100) NOT NULL,
                 token VARCHAR(100) NOT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            );
         """)
         
         # Seed users
@@ -174,11 +183,11 @@ def init_database():
 
         cursor.close()
         conn.close()
-        print("Database initialization completed successfully!")
+        print("Database initialization completed successfully on Supabase PostgreSQL!")
         
     except Exception as err:
-        print(f"Error connecting/initializing: {err}")
-        print("\nMake sure MySQL Server is running and check settings in config.py.")
+        print(f"Error connecting/initializing PostgreSQL: {err}")
+        print("\nMake sure your Supabase PostgreSQL credentials are correct in config.py or the .env file.")
 
 if __name__ == "__main__":
     init_database()

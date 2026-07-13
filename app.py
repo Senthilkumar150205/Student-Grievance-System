@@ -7,8 +7,8 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import pymysql
-import pymysql.cursors
+import psycopg2
+import psycopg2.extras
 
 # ReportLab Imports for PDF Report
 from reportlab.lib.pagesizes import letter
@@ -25,15 +25,52 @@ app.config.from_object(Config)
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Database Connection Wrapper to map DictCursor compatibility
-class PymysqlConnectionWrapper:
+# Database Connection and Cursor Wrappers to map compatibility
+class PostgresCursorWrapper:
+    def __init__(self, cursor):
+        self._cursor = cursor
+        self.lastrowid = None
+        
+    def execute(self, query, params=None):
+        # execute the query
+        res = self._cursor.execute(query, params)
+        
+        # If it's an INSERT, query the last generated sequence value for compatibility with lastrowid
+        upper_query = query.strip().upper() if isinstance(query, str) else ""
+        if upper_query.startswith("INSERT"):
+            try:
+                # We open a separate temporary cursor on the connection to query LASTVAL()
+                with self._cursor.connection.cursor() as temp_cur:
+                    temp_cur.execute("SELECT LASTVAL()")
+                    self.lastrowid = temp_cur.fetchone()[0]
+            except Exception:
+                self.lastrowid = None
+        return res
+        
+    def fetchone(self):
+        return self._cursor.fetchone()
+        
+    def fetchall(self):
+        return self._cursor.fetchall()
+        
+    def close(self):
+        return self._cursor.close()
+        
+    def __getattr__(self, name):
+        return getattr(self._cursor, name)
+
+class PostgresConnectionWrapper:
     def __init__(self, conn):
         self._conn = conn
-    
+        
     def cursor(self, dictionary=False, **kwargs):
         if dictionary:
-            return self._conn.cursor(pymysql.cursors.DictCursor)
-        return self._conn.cursor()
+            cursor_factory = psycopg2.extras.RealDictCursor
+        else:
+            cursor_factory = None
+            
+        cur = self._conn.cursor(cursor_factory=cursor_factory)
+        return PostgresCursorWrapper(cur)
         
     def commit(self):
         return self._conn.commit()
@@ -50,34 +87,37 @@ def init_pool():
     global db_pool
     if db_pool is None:
         try:
-            # Pre-check database existence
-            conn = pymysql.connect(
-                host=app.config['DB_HOST'],
-                user=app.config['DB_USER'],
-                password=app.config['DB_PASSWORD'],
-                port=app.config['DB_PORT']
-            )
-            cursor = conn.cursor()
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {app.config['DB_NAME']}")
-            cursor.close()
+            # Pre-check database connection
+            if app.config['DATABASE_URL']:
+                conn = psycopg2.connect(app.config['DATABASE_URL'])
+            else:
+                conn = psycopg2.connect(
+                    host=app.config['DB_HOST'],
+                    user=app.config['DB_USER'],
+                    password=app.config['DB_PASSWORD'],
+                    dbname=app.config['DB_NAME'],
+                    port=app.config['DB_PORT']
+                )
             conn.close()
-            
             db_pool = True # Mark verified
         except Exception as err:
-            app.logger.error(f"Failed to connect to MySQL database: {err}")
+            app.logger.error(f"Failed to connect to PostgreSQL database: {err}")
             raise err
 
 def get_db():
     if db_pool is None:
         init_pool()
-    conn = pymysql.connect(
-        host=app.config['DB_HOST'],
-        user=app.config['DB_USER'],
-        password=app.config['DB_PASSWORD'],
-        database=app.config['DB_NAME'],
-        port=app.config['DB_PORT']
-    )
-    return PymysqlConnectionWrapper(conn)
+    if app.config['DATABASE_URL']:
+        conn = psycopg2.connect(app.config['DATABASE_URL'])
+    else:
+        conn = psycopg2.connect(
+            host=app.config['DB_HOST'],
+            user=app.config['DB_USER'],
+            password=app.config['DB_PASSWORD'],
+            dbname=app.config['DB_NAME'],
+            port=app.config['DB_PORT']
+        )
+    return PostgresConnectionWrapper(conn)
 
 # Allowed file extension helper
 def allowed_file(filename):
