@@ -2,7 +2,7 @@ import os
 import secrets
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory, make_response
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -123,23 +123,57 @@ def get_db():
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
+# Timezone helper to convert UTC timestamps to local IST (+05:30)
+def to_local_time(dt):
+    if dt is None:
+        return None
+    if isinstance(dt, str):
+        try:
+            dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            try:
+                dt = datetime.strptime(dt, '%Y-%m-%d %H:%M:%S.%f')
+            except ValueError:
+                return dt
+    try:
+        if dt.tzinfo is None:
+            return dt + timedelta(hours=5, minutes=30)
+        else:
+            ist_tz = timezone(timedelta(hours=5, minutes=30))
+            return dt.astimezone(ist_tz)
+    except Exception:
+        return dt
+
 # Custom Template Filter for formatting Datetime safely
 @app.template_filter('datetimeformat')
 def datetimeformat(value, format='%Y-%m-%d %H:%M'):
-    if value is None:
+    local_val = to_local_time(value)
+    if local_val is None:
         return 'Date unavailable'
-    if isinstance(value, str):
-        try:
-            value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-        except ValueError:
-            try:
-                value = datetime.strptime(value, '%Y-%m-%d %H:%M:%S.%f')
-            except ValueError:
-                return value
+    if isinstance(local_val, str):
+        return local_val
     try:
-        return value.strftime(format)
+        return local_val.strftime(format)
     except Exception:
-        return str(value)
+        return str(local_val)
+
+# Resequence grievance IDs to start from 1, 2, 3 and avoid gaps
+def resequence_grievances(cursor):
+    cursor.execute("SELECT id FROM grievances ORDER BY id ASC")
+    rows = cursor.fetchall()
+    for index, row in enumerate(rows):
+        old_id = row['id']
+        new_id = index + 1
+        if old_id != new_id:
+            # Update replies referencing the grievance
+            cursor.execute("UPDATE grievance_replies SET grievance_id = %s WHERE grievance_id = %s", (new_id, old_id))
+            # Update the grievance ID itself
+            cursor.execute("UPDATE grievances SET id = %s WHERE id = %s", (new_id, old_id))
+            # Update notification messages referencing the old ID
+            cursor.execute("UPDATE notifications SET message = REPLACE(message, %s, %s)", (f"#{old_id}", f"#{new_id}"))
+            cursor.execute("UPDATE notifications SET message = REPLACE(message, %s, %s)", (f"Grievance {old_id}", f"Grievance {new_id}"))
+    new_seq_val = len(rows) + 1
+    cursor.execute(f"ALTER SEQUENCE grievances_id_seq RESTART WITH {new_seq_val}")
 
 # Custom Context Processor for layout data (unread notifications)
 @app.context_processor
@@ -279,7 +313,7 @@ def track_status():
         if result.get('is_anonymous'):
             result['student_name'] = 'Anonymous'
         # Format date for response
-        result['created_at'] = result['created_at'].strftime('%Y-%m-%d %H:%M')
+        result['created_at'] = to_local_time(result['created_at']).strftime('%Y-%m-%d %H:%M')
         return jsonify({'success': True, 'data': result})
     else:
         return jsonify({'success': False, 'message': 'Grievance not found. Please verify the ID.'})
@@ -1687,6 +1721,7 @@ def delete_grievance(id):
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("DELETE FROM grievances WHERE id = %s", (id,))
+    resequence_grievances(cursor)
     conn.commit()
     cursor.close()
     conn.close()
@@ -2000,7 +2035,7 @@ def export_csv():
             row['category'],
             row['priority'],
             row['status'],
-            row['created_at'].strftime('%Y-%m-%d %H:%M:%S')
+            to_local_time(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')
         ])
         
     response = make_response(output.getvalue())
@@ -2121,7 +2156,7 @@ def export_pdf(id):
     
     data = [
         [Paragraph("Grievance ID:", meta_label), Paragraph(str(grievance['id']), body_style),
-         Paragraph("Date Submitted:", meta_label), Paragraph(grievance['created_at'].strftime('%Y-%m-%d %H:%M'), body_style)],
+         Paragraph("Date Submitted:", meta_label), Paragraph(to_local_time(grievance['created_at']).strftime('%Y-%m-%d %H:%M'), body_style)],
         [Paragraph("Student Name:", meta_label), Paragraph(grievance['student_name'], body_style),
          Paragraph("Student Email:", meta_label), Paragraph(grievance['student_email'], body_style)],
         [Paragraph("Category:", meta_label), Paragraph(grievance['category'], body_style),
@@ -2161,7 +2196,7 @@ def export_pdf(id):
     else:
         reply_data = []
         for r in replies:
-            date_str = r['created_at'].strftime('%Y-%m-%d %H:%M')
+            date_str = to_local_time(r['created_at']).strftime('%Y-%m-%d %H:%M')
             sender = f"{r['sender_name']} ({r['sender_role'].upper()})"
             msg_p = Paragraph(f"<b>{sender}</b> at {date_str}<br/>{r['message'].replace(chr(10), '<br/>')}", body_style)
             reply_data.append([msg_p])

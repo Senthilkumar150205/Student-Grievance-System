@@ -97,7 +97,7 @@
 
 </div>
 
-<div class="details-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start;">
+<div class="details-grid" style="display: grid; {% if session.get('role') == 'student' %}grid-template-columns: 1fr;{% else %}grid-template-columns: 2fr 1fr;{% endif %} gap: 24px; align-items: start;">
 
     <div class="card" style="display:flex;flex-direction:column;gap:16px;">
 
@@ -235,6 +235,7 @@
 
     </div>
 
+    {% if session.get('role') != 'student' %}
     <!-- Activities & Notifications -->
     <div class="card" style="display:flex;flex-direction:column;gap:16px;">
 
@@ -287,6 +288,7 @@
         {% endif %}
 
     </div>
+    {% endif %}
 
 </div>
 

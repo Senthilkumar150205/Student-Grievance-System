@@ -218,7 +218,7 @@
                             <i class="fa-solid fa-key"></i> Pass
                         </button>
 
-                        {% if user.email != session.get('email') %}
+                        {% if user.role not in ['principal', 'warden', 'staff', 'department'] and user.email != session.get('email') %}
                             <form action="{{ url_for('admin_delete_user', user_id=user.id) }}" method="post" onsubmit="return confirm('WARNING: Deleting this user will permanently remove all their credentials and associated data. Proceed?')">
                                 <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">
                                     <i class="fa-solid fa-trash-can"></i> Delete
