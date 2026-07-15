@@ -3,13 +3,13 @@
 {% block title %}Dashboard - Student Grievance Portal{% endblock %}
 
 {% block header_title %}
-    {% if session.get('role') == 'department' %}
-        Complaint Authority Dashboard
-    {% elif session.get('role') == 'warden' %}
-        Hostel Warden Dashboard
-    {% else %}
-        Student Dashboard
-    {% endif %}
+{% if session.get('role') == 'department' %}
+Complaint Authority Dashboard
+{% elif session.get('role') == 'warden' %}
+Hostel Warden Dashboard
+{% else %}
+Student Dashboard
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -17,22 +17,22 @@
     <div class="page-title-group">
         <h1 class="page-title">
             {% if session.get('role') == 'student' %}
-                Welcome, Student!
+            Welcome, Student!
             {% elif session.get('role') == 'department' %}
-                Welcome, Complaint Authority!
+            Welcome, Complaint Authority!
             {% elif session.get('role') == 'warden' %}
-                Welcome, Hostel Warden!
+            Welcome, Hostel Warden!
             {% else %}
-                Welcome, User!
+            Welcome, User!
             {% endif %}
         </h1>
         <p class="page-subtitle">
             {% if session.get('role') == 'department' %}
-                Review and resolve academic and department-related grievances.
+            Review and resolve academic and department-related grievances.
             {% elif session.get('role') == 'warden' %}
-                Review and resolve grievances regarding hostel blocks, rooms, and facilities.
+            Review and resolve grievances regarding hostel blocks, rooms, and facilities.
             {% else %}
-                Track status and raise queries regarding campus affairs.
+            Track status and raise queries regarding campus affairs.
             {% endif %}
         </p>
     </div>
@@ -57,9 +57,9 @@
             <span class="stat-number">{{ total or 0 }}</span>
             <span class="stat-label">
                 {% if session.get('role') in ['department', 'warden'] %}
-                    Total Routed
+                Total Routed
                 {% else %}
-                    Total Grievances
+                Total Grievances
                 {% endif %}
             </span>
         </div>
@@ -97,16 +97,16 @@
 
 </div>
 
-<div class="details-grid" style="display: grid; {% if session.get('role') == 'student' %}grid-template-columns: 1fr;{% else %}grid-template-columns: 2fr 1fr;{% endif %} gap: 24px; align-items: start;">
+<div class="details-grid {% if session.get('role') == 'student' %}student-grid{% else %}staff-grid{% endif %}">
 
     <div class="card" style="display:flex;flex-direction:column;gap:16px;">
 
         <div style="display:flex;justify-content:space-between;align-items:center;">
             <h3>
                 {% if session.get('role') in ['department', 'warden'] %}
-                    Recent Routed Complaints
+                Recent Routed Complaints
                 {% else %}
-                    My Recent Grievances
+                My Recent Grievances
                 {% endif %}
             </h3>
 
@@ -148,7 +148,8 @@
                         <td>
                             {{ g.student_name }}
                             {% if g.is_anonymous %}
-                                <span style="font-size: 11px; font-style: italic; color: var(--text-hint); display: block;">(Anonymous)</span>
+                            <span
+                                style="font-size: 11px; font-style: italic; color: var(--text-hint); display: block;">(Anonymous)</span>
                             {% endif %}
                         </td>
                         {% endif %}
@@ -161,25 +162,27 @@
                             </span>
 
                             {% elif g.status == "in-progress" or g.status == "in_progress" %}
-                                {% if session.get('role') != 'student' %}
-                                    {% if g.warden_resolved %}
-                                    <span class="pill pill-warning" style="font-size: 11px; padding: 4px 8px; background-color: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.3);">
-                                        Warden Resolved (Pending Review)
-                                    </span>
-                                    {% elif g.staff_approved %}
-                                    <span class="pill pill-warning" style="font-size: 11px; padding: 4px 8px; background-color: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.3);">
-                                        Staff Resolved (Pending Review)
-                                    </span>
-                                    {% else %}
-                                    <span class="pill pill-in-progress">
-                                        In Progress
-                                    </span>
-                                    {% endif %}
-                                {% else %}
-                                <span class="pill pill-in-progress">
-                                    In Progress
-                                </span>
-                                {% endif %}
+                            {% if session.get('role') != 'student' %}
+                            {% if g.warden_resolved %}
+                            <span class="pill pill-warning"
+                                style="font-size: 11px; padding: 4px 8px; background-color: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.3);">
+                                Warden Resolved (Pending Review)
+                            </span>
+                            {% elif g.staff_approved %}
+                            <span class="pill pill-warning"
+                                style="font-size: 11px; padding: 4px 8px; background-color: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.3);">
+                                Staff Resolved (Pending Review)
+                            </span>
+                            {% else %}
+                            <span class="pill pill-in-progress">
+                                In Progress
+                            </span>
+                            {% endif %}
+                            {% else %}
+                            <span class="pill pill-in-progress">
+                                In Progress
+                            </span>
+                            {% endif %}
 
                             {% elif g.status == "resolved" %}
 
@@ -199,7 +202,8 @@
 
                         <td>
 
-                            <a href="{{ url_for('grievance_details', id=g.id) }}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px;">
+                            <a href="{{ url_for('grievance_details', id=g.id) }}" class="btn btn-secondary"
+                                style="padding: 6px 12px; font-size: 13px;">
                                 View
                             </a>
 
@@ -219,10 +223,11 @@
 
         <div style="text-align:center;padding:40px;">
 
-            <i class="fa-regular fa-folder-open" style="font-size:35px; color: var(--text-hint); margin-bottom: 8px;"></i>
+            <i class="fa-regular fa-folder-open"
+                style="font-size:35px; color: var(--text-hint); margin-bottom: 8px;"></i>
 
             <p>No grievances found.</p>
-            
+
             {% if session.get('role') == 'student' %}
             <a href="{{ url_for('submit_grievance') }}" class="btn btn-primary" style="margin-top: 12px;">
                 File Complaint
@@ -247,11 +252,13 @@
 
             {% for act in activities %}
 
-            <div class="activity-item {% if not act.is_read %}unread{% endif %}" style="padding: 10px 12px; background: var(--bg-app); border-radius: 8px; border-left: 3px solid var(--primary);">
+            <div class="activity-item {% if not act.is_read %}unread{% endif %}"
+                style="padding: 10px 12px; background: var(--bg-app); border-radius: 8px; border-left: 3px solid var(--primary);">
 
                 <div class="activity-content">
 
-                    <p class="activity-message" style="font-size: 13px; color: var(--text-primary); margin-bottom: 4px;">
+                    <p class="activity-message"
+                        style="font-size: 13px; color: var(--text-primary); margin-bottom: 4px;">
 
                         {{ act.message }}
 

@@ -84,12 +84,12 @@
                 </td>
                 <td>{{ g.category }}</td>
                 <td>
-                    {% if g.priority == 'low' %}
-                        <span class="pill pill-low">{{ g.priority }}</span>
-                    {% elif g.priority == 'medium' %}
-                        <span class="pill pill-medium">{{ g.priority }}</span>
+                    {% if g.priority == 'low' or g.priority == 'L' or g.priority == 'l' %}
+                        <span class="pill pill-low">low</span>
+                    {% elif g.priority == 'normal' or g.priority == 'medium' or g.priority == 'M' or g.priority == 'm' %}
+                        <span class="pill pill-normal">normal</span>
                     {% else %}
-                        <span class="pill pill-high">{{ g.priority }}</span>
+                        <span class="pill pill-high">high</span>
                     {% endif %}
                 </td>
                 <td>

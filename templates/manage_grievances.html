@@ -44,7 +44,7 @@
             <select name="priority" id="priority" class="form-control" onchange="this.form.submit()">
                 <option value="all" {% if priority_filter == 'all' %}selected{% endif %}>All Priorities</option>
                 <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Low</option>
-                <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
+                <option value="normal" {% if priority_filter == 'normal' or priority_filter == 'medium' or priority_filter == 'M' or priority_filter == 'm' %}selected{% endif %}>Normal</option>
                 <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>High</option>
             </select>
         </div>
@@ -90,12 +90,12 @@
                 </td>
                 <td>{{ g.category }}</td>
                 <td>
-                    {% if g.priority == 'low' %}
-                        <span class="pill pill-low">{{ g.priority }}</span>
-                    {% elif g.priority == 'medium' %}
-                        <span class="pill pill-medium">{{ g.priority }}</span>
+                    {% if g.priority == 'low' or g.priority == 'L' or g.priority == 'l' %}
+                        <span class="pill pill-low">low</span>
+                    {% elif g.priority == 'normal' or g.priority == 'medium' or g.priority == 'M' or g.priority == 'm' %}
+                        <span class="pill pill-normal">normal</span>
                     {% else %}
-                        <span class="pill pill-high">{{ g.priority }}</span>
+                        <span class="pill pill-high">high</span>
                     {% endif %}
                 </td>
                 <td>

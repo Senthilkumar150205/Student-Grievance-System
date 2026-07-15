@@ -745,7 +745,8 @@ textarea.form-control {
     color: var(--primary);
 }
 
-.pill-medium {
+.pill-medium,
+.pill-normal {
     background-color: var(--warning-bg);
     color: var(--warning);
 }
@@ -950,6 +951,10 @@ textarea.form-control {
     display: grid;
     grid-template-columns: 1fr 1.2fr;
     gap: 32px;
+}
+
+.student-grid {
+    grid-template-columns: 1fr;
 }
 
 .grievance-info-panel {

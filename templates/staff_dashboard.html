@@ -118,12 +118,12 @@
                     </td>
                     <td>{{ grievance.category }}</td>
                     <td>
-                        {% if grievance.priority == 'low' %}
-                            <span class="pill pill-low">{{ grievance.priority }}</span>
-                        {% elif grievance.priority == 'medium' %}
-                            <span class="pill pill-medium">{{ grievance.priority }}</span>
+                        {% if grievance.priority == 'low' or grievance.priority == 'L' or grievance.priority == 'l' %}
+                            <span class="pill pill-low">low</span>
+                        {% elif grievance.priority == 'normal' or grievance.priority == 'medium' or grievance.priority == 'M' or grievance.priority == 'm' %}
+                            <span class="pill pill-normal">normal</span>
                         {% else %}
-                            <span class="pill pill-high">{{ grievance.priority }}</span>
+                            <span class="pill pill-high">high</span>
                         {% endif %}
                     </td>
                     <td>

@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS grievances (
     description TEXT NOT NULL,
     attachment VARCHAR(255) DEFAULT NULL,
     status VARCHAR(50) DEFAULT 'pending',
-    priority VARCHAR(50) DEFAULT 'medium',
+    priority VARCHAR(50) DEFAULT 'normal',
     remarks TEXT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

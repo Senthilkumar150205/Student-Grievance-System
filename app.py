@@ -1057,7 +1057,7 @@ def submit_grievance():
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         category = request.form.get('category', '').strip()  # 'Department' or 'Hostel'
-        priority = request.form.get('priority', 'medium').strip()
+        priority = request.form.get('priority', 'normal').strip()
         description = request.form.get('description', '').strip()
         target_department = request.form.get('target_department', '').strip()
         attachment = request.files.get('attachment')
@@ -1067,8 +1067,10 @@ def submit_grievance():
             flash('Please fill in all required fields.', 'danger')
             return render_template('submit_grievance.html')
             
-        if priority not in ['low', 'medium', 'high']:
-            priority = 'medium'
+        if priority in ['medium', 'M', 'm']:
+            priority = 'normal'
+        if priority not in ['low', 'normal', 'high']:
+            priority = 'normal'
             
         filename = None
         if attachment and attachment.filename != '':
@@ -1185,8 +1187,11 @@ def my_grievances():
         params.append(status_filter)
         
     if priority_filter != 'all':
-        query += " AND priority = %s"
-        params.append(priority_filter)
+        if priority_filter == 'normal':
+            query += " AND priority IN ('normal', 'medium', 'M', 'm')"
+        else:
+            query += " AND priority = %s"
+            params.append(priority_filter)
         
     if search_query:
         query += " AND (title LIKE %s OR description LIKE %s)"
@@ -1197,7 +1202,7 @@ def my_grievances():
     if sort_by == 'oldest':
         query += " ORDER BY created_at ASC"
     elif sort_by == 'priority_high':
-        query += " ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 END ASC, created_at DESC"
+        query += " ORDER BY CASE WHEN priority = 'high' THEN 1 WHEN priority IN ('normal', 'medium', 'M', 'm') THEN 2 WHEN priority = 'low' THEN 3 ELSE 4 END ASC, created_at DESC"
     else: # newest
         query += " ORDER BY created_at DESC"
         
@@ -1525,9 +1530,9 @@ def admin_chart_data():
     
     # Monthly Trends (last 6 months)
     cursor.execute(
-        """SELECT DATE_FORMAT(created_at, '%b %Y') as month, COUNT(*) as count 
+        """SELECT TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count 
            FROM grievances 
-           GROUP BY DATE_FORMAT(created_at, '%Y-%m'), DATE_FORMAT(created_at, '%b %Y')
+           GROUP BY TO_CHAR(created_at, 'YYYY-MM'), TO_CHAR(created_at, 'Mon YYYY')
            ORDER BY MIN(created_at) ASC 
            LIMIT 6"""
     )
@@ -1569,8 +1574,11 @@ def admin_grievances():
         params.append(status_filter)
         
     if priority_filter != 'all':
-        query += " AND g.priority = %s"
-        params.append(priority_filter)
+        if priority_filter == 'normal':
+            query += " AND g.priority IN ('normal', 'medium', 'M', 'm')"
+        else:
+            query += " AND g.priority = %s"
+            params.append(priority_filter)
         
     if search_query:
         query += " AND (g.title LIKE %s OR g.description LIKE %s OR (g.is_anonymous = FALSE AND (u.name LIKE %s OR u.email LIKE %s)))"
@@ -1700,7 +1708,9 @@ def update_priority(id):
         return redirect(url_for('dashboard'))
         
     priority = request.form.get('priority', '').strip()
-    if priority not in ['low', 'medium', 'high']:
+    if priority in ['medium', 'M', 'm']:
+        priority = 'normal'
+    if priority not in ['low', 'normal', 'high']:
         flash('Invalid priority value.', 'danger')
         return redirect(url_for('grievance_details', id=id))
         
@@ -2033,7 +2043,7 @@ def export_csv():
             'N/A' if is_anon else row['email'],
             row['title'],
             row['category'],
-            row['priority'],
+            'normal' if row['priority'].lower() in ['medium', 'm'] else row['priority'],
             row['status'],
             to_local_time(row['created_at']).strftime('%Y-%m-%d %H:%M:%S')
         ])
@@ -2161,7 +2171,7 @@ def export_pdf(id):
          Paragraph("Student Email:", meta_label), Paragraph(grievance['student_email'], body_style)],
         [Paragraph("Category:", meta_label), Paragraph(grievance['category'], body_style),
          Paragraph("Target/Dept:", meta_label), Paragraph(grievance['target_department'] or 'N/A', body_style)],
-        [Paragraph("Priority:", meta_label), Paragraph(grievance['priority'].upper(), body_style),
+        [Paragraph("Priority:", meta_label), Paragraph(('normal' if grievance['priority'].lower() in ['medium', 'm'] else grievance['priority']).upper(), body_style),
          Paragraph("Current Status:", meta_label), Paragraph(grievance['status'].upper(), body_style)]
     ]
     

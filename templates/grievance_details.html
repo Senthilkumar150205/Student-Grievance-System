@@ -67,18 +67,18 @@
                         <form action="{{ url_for('update_priority', id=grievance.id) }}" method="post" style="display: flex; gap: 6px; align-items: center;">
                             <select name="priority" class="form-control" style="padding: 4px 8px; font-size: 12px; width: 90px;" onchange="this.form.submit()">
                                 <option value="low" {% if grievance.priority == 'low' %}selected{% endif %}>Low</option>
-                                <option value="medium" {% if grievance.priority == 'medium' %}selected{% endif %}>Medium</option>
+                                <option value="normal" {% if grievance.priority == 'normal' or grievance.priority == 'medium' or grievance.priority == 'M' or grievance.priority == 'm' %}selected{% endif %}>Normal</option>
                                 <option value="high" {% if grievance.priority == 'high' %}selected{% endif %}>High</option>
                             </select>
                         </form>
                     {% else %}
                         <span>
-                            {% if grievance.priority == 'low' %}
-                                <span class="pill pill-low">{{ grievance.priority }}</span>
-                            {% elif grievance.priority == 'medium' %}
-                                <span class="pill pill-medium">{{ grievance.priority }}</span>
+                            {% if grievance.priority == 'low' or grievance.priority == 'L' or grievance.priority == 'l' %}
+                                <span class="pill pill-low">low</span>
+                            {% elif grievance.priority == 'normal' or grievance.priority == 'medium' or grievance.priority == 'M' or grievance.priority == 'm' %}
+                                <span class="pill pill-normal">normal</span>
                             {% else %}
-                                <span class="pill pill-high">{{ grievance.priority }}</span>
+                                <span class="pill pill-high">high</span>
                             {% endif %}
                         </span>
                     {% endif %}
