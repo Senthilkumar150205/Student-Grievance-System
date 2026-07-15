@@ -1397,6 +1397,14 @@ def profile():
             department = request.form.get('department', '').strip()
             profile_photo = request.files.get('profile_photo')
             
+            # Force existing name and department for student role to prevent tampering
+            if session.get('role') == 'student':
+                cursor.execute("SELECT name, department FROM users WHERE id = %s", (session['user_id'],))
+                db_user = cursor.fetchone()
+                if db_user:
+                    name = db_user['name']
+                    department = db_user['department'] or ''
+            
             if not name:
                 flash('Name is required.', 'danger')
                 return redirect(url_for('profile'))

@@ -51,24 +51,22 @@
             <div style="width: 100%; text-align: left; display: flex; flex-direction: column; gap: 16px;">
                 <div class="form-group">
                     <label for="profName" class="form-label">Full Name</label>
+                    {% if user.role == 'student' %}
+                    <input type="text" name="name" id="profName" class="form-control" value="{{ user.name }}" readonly style="background-color: var(--bg-app); cursor: not-allowed; color: var(--text-secondary);">
+                    {% else %}
                     <input type="text" name="name" id="profName" class="form-control" value="{{ user.name }}" required>
+                    {% endif %}
                 </div>
                 
                 <div class="form-group">
-                    <label for="profEmail" class="form-label">Email Address (Read-Only)</label>
+                    <label for="profEmail" class="form-label">Email Address{% if user.role != 'student' %} (Read-Only){% endif %}</label>
                     <input type="email" id="profEmail" class="form-control" value="{{ user.email }}" readonly style="background-color: var(--bg-app); cursor: not-allowed; color: var(--text-secondary);">
                 </div>
                 
                 {% if user.role == 'student' %}
                 <div class="form-group">
                     <label for="profDept" class="form-label">Department / Branch</label>
-                    <select name="department" id="profDept" class="form-control">
-                        <option value="Computer Science" {% if user.department == 'Computer Science' %}selected{% endif %}>Computer Science</option>
-                        <option value="Electrical Engineering" {% if user.department == 'Electrical Engineering' %}selected{% endif %}>Electrical Engineering</option>
-                        <option value="Mechanical Engineering" {% if user.department == 'Mechanical Engineering' %}selected{% endif %}>Mechanical Engineering</option>
-                        <option value="Civil Engineering" {% if user.department == 'Civil Engineering' %}selected{% endif %}>Civil Engineering</option>
-                        <option value="Business Administration" {% if user.department == 'Business Administration' %}selected{% endif %}>Business Administration</option>
-                    </select>
+                    <input type="text" name="department" id="profDept" class="form-control" value="{{ user.department }}" readonly style="background-color: var(--bg-app); cursor: not-allowed; color: var(--text-secondary);">
                 </div>
                 {% endif %}
             </div>
