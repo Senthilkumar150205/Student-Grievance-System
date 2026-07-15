@@ -142,6 +142,15 @@
 {% endblock %}
 
 {% block scripts %}
+{% set default_photos = {
+    'admin': 'admin.png',
+    'student': 'student.png',
+    'staff': 'staff.png',
+    'department': 'authority.png',
+    'warden': 'warden.png',
+    'principal': 'principal.png'
+} %}
+{% set default_photo = default_photos.get(user.role, 'default.png') %}
 <script>
     // Profile picture preview
     const photoInput = document.getElementById('profilePhotoInput');
