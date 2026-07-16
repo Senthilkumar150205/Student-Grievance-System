@@ -233,14 +233,14 @@ Student Dashboard
                         </td>
 
                         <td>
-                            <div style="display: flex; gap: 16px;">
+                            <div style="display: flex; align-items: center; width: 100%;">
                                 <a href="{{ url_for('grievance_details', id=g.id) }}" class="btn btn-secondary"
                                     style="padding: 6px 12px; font-size: 13px;">
                                     View
                                 </a>
                                 {% if session.get('role') in ['student', 'department'] %}
                                 <a href="{{ url_for('delete_grievance_ui', id=g.id) }}" class="btn btn-danger"
-                                    style="padding: 6px 12px; font-size: 13px;"
+                                    style="padding: 6px 12px; font-size: 13px; margin-left: auto;"
                                     onclick="event.preventDefault(); const href = this.href; showCustomConfirm('Are you sure want to remove this Grievance?', function() { window.location.href = href; });">
                                     <i class="fa-solid fa-trash"></i> Remove
                                 </a>
